@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <style>
         .content-placeholder {
             padding: 15px;
@@ -133,7 +135,7 @@
                         Easy<strong class="text-warning">GYM</strong>
                         <i class="fa-solid fa-dumbbell"></i>
                     </span>
-                    </a>
+                </a>
 
                 <!-- Admin text with Font Awesome Icon -->
                 <span class="navbar-text ms-auto text-white" style="box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5); padding: 5px; border-radius: 5px;">
@@ -166,14 +168,14 @@
                     <button type="button" class="btn-close" id="closeSidebar" aria-label="Close"></button>
                 </div>
                 <center class="mt-4">
-                <img src="../assets/img/fitness_masters_logo.png" alt="Easygym Logo" style="padding: 5px; height: 70px; width: auto; border-radius: 5px; background-color: rgba(37, 22, 155, 0.8);">
-                <div class="offcanvas-body">
+                    <img src="../assets/img/fitness_masters_logo.png" alt="Easygym Logo" style="padding: 5px; height: 70px; width: auto; border-radius: 5px; background-color: rgba(37, 22, 155, 0.8);">
+                    <div class="offcanvas-body">
                 </center>
                 <div class="offcanvas-body">
                     <!-- Buttons with Icons -->
                     <button class="btn btn-sidebar btn-outline-primary text-start"
                         data-url=""><i class="fas fa-home"></i> Home</button>
-                    <button class="btn btn-sidebar btn-outline-primary text-start"
+                    <button class="btn btn-sidebar btn-outline-primary text-start" id="profileButton"
                         data-url="../gym_instructor/personal_info.php"><i class="fas fa-tachometer-alt"></i>
                         Personal Information</button>
                     <button class="btn btn-sidebar btn-outline-primary text-start"
@@ -185,7 +187,7 @@
                     <button class="btn btn-sidebar btn-outline-primary text-start"
                         data-url="../gym_instructor/client_progress_tracking.php"><i class="fas fa-id-card-alt"></i>
                         Client Progress Tracking</button>
-                    <button class="btn btn-sidebar btn-outline-danger text-start"
+                    <button class="btn btn-sidebar btn-outline-danger text-start" id="logoutButton"
                         data-url="../index.php"><i class="fas fa-sign-out-alt"></i>
                         Logout</button>
                 </div>
@@ -205,7 +207,15 @@
 
     <!-- Bootstrap JavaScript (for interactive components like the off-canvas sidebar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <script type="module">
+        import {
+            API_BASED_URL
+        } from '../api_based_url.js';
+
+        console.log(API_BASED_URL);
         document.addEventListener('DOMContentLoaded', function() {
             const contentPlaceholder = document.getElementById('content-placeholder');
             const sidebar = document.getElementById('customSidebar');
@@ -250,24 +260,114 @@
                     });
             }
 
+            // Function to fetch user profile
+            function fetchUserProfile() {
+                Swal.fire({
+                    title: 'Loading Profile...',
+                    html: 'Please wait.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch(`${API_BASED_URL}/api/instructor/profile`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        Swal.close(); // Close loading alert
+                        if (data.success) {
+                            // Display user profile in the content placeholder
+                            contentPlaceholder.innerHTML = `
+                        <h3>User Profile</h3>
+                        <p><strong>Name:</strong> ${data.user.name}</p>
+                        <p><strong>Email:</strong> ${data.user.email}</p>
+                        <p><strong>User Type:</strong> ${data.user_type}</p>
+                    `;
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.close(); // Close loading alert
+                        console.error('Error fetching profile:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while fetching the profile.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+            }
+
             // Event listener for sidebar buttons
             document.querySelectorAll('.btn-sidebar').forEach(button => {
                 button.addEventListener('click', function() {
                     const url = this.getAttribute('data-url');
+                    if (this.id === "logoutButton") {
 
-                    // Special handling for the "Logout" button
-                    if (url === "../index.php") {
-                        // Perform a full page redirect for logout
-                        window.location.href = url;
+                        Swal.fire({
+                            title: 'Logging out...',
+                            html: 'Please wait.',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // Call the logout API and handle the response
+                        fetch(`${API_BASED_URL}/api/logout`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // On successful logout, clear the token and redirect to the login page
+                                    localStorage.removeItem('authToken'); // Clear the stored token
+                                    Swal.fire({
+                                        title: 'Logged out!',
+                                        text: 'You have successfully logged out.',
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        window.location.href = '../index.php'; // Redirect to login page
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Logout failed!',
+                                        text: data.message,
+                                        icon: 'error',
+                                        confirmButtonText: 'Try Again'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error during logout:', error);
+                                alert('An error occurred while logging out.');
+                            });
+                    } else if (this.id === "profileButton") {
+                        // Fetch user profile when profile button is clicked
+                        fetchUserProfile();
                     } else if (url) {
-                        // Load content for other buttons in the main content area
                         loadContent(url);
                     }
                 });
             });
         });
     </script>
-
 </body>
 
 </html>

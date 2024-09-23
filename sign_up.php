@@ -195,10 +195,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Include SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="api_based_url.js"></script>
+    
     
     <!-- JavaScript for form submission -->
-    <script>
+    <script type="module">
+        import {API_BASED_URL} from './api_based_url.js';
 document.getElementById('signup-form').addEventListener('submit', function(event) {
     event.preventDefault(); // Prevent the default form submission
 
