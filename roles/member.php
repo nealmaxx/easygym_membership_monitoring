@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         .content-placeholder {
             padding: 15px;
@@ -177,7 +178,7 @@
                     data-url="">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </button>
-                <button class="btn btn-sidebar btn-outline-primary text-start"
+                <button class="btn btn-sidebar btn-outline-primary text-start" id="profileButton"
                     data-url="../client/personal_info.php">
                     <i class="fas fa-user-friends"></i> Personal Information
                 </button>
@@ -193,7 +194,7 @@
                     data-url="../client/setting.php">
                     <i class="fas fa-gear"></i> Setting
                 </button>
-                <button class="btn btn-sidebar btn-outline-danger text-start"
+                <button class="btn btn-sidebar btn-outline-danger text-start" id="logoutButton"
                     data-url="../index.php">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
@@ -214,7 +215,14 @@
 
     <!-- Bootstrap JavaScript (for interactive components like the off-canvas sidebar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script type="module">
+        import {
+            API_BASED_URL
+        } from '../api_based_url.js';
+
+        console.log(API_BASED_URL);
         document.addEventListener('DOMContentLoaded', function() {
             const contentPlaceholder = document.getElementById('content-placeholder');
             const sidebar = document.getElementById('customSidebar');
@@ -263,13 +271,52 @@
             document.querySelectorAll('.btn-sidebar').forEach(button => {
                 button.addEventListener('click', function() {
                     const url = this.getAttribute('data-url');
+                    if (this.id === "logoutButton") {
 
-                    // Special handling for the "Logout" button
-                    if (url === "../index.php") {
-                        // Perform a full page redirect for logout
-                        window.location.href = url;
+                        Swal.fire({
+                            title: 'Logging out...',
+                            html: 'Please wait.',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // Call the logout API and handle the response
+                        fetch(`${API_BASED_URL}/api/logout`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // On successful logout, clear the token and redirect to the login page
+                                    localStorage.removeItem('authToken'); // Clear the stored token
+                                    Swal.fire({
+                                        title: 'Logged out!',
+                                        text: 'You have successfully logged out.',
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        window.location.href = '../index.php'; // Redirect to login page
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Logout failed!',
+                                        text: data.message,
+                                        icon: 'error',
+                                        confirmButtonText: 'Try Again'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error during logout:', error);
+                                alert('An error occurred while logging out.');
+                            });
                     } else if (url) {
-                        // Load content for other buttons in the main content area
                         loadContent(url);
                     }
                 });

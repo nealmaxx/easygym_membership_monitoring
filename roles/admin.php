@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <style>
         .content-placeholder {
@@ -209,92 +210,119 @@
                 </div>
             </div>
         </div>
-        
+
     </div>
 
     <!-- Bootstrap JavaScript (for interactive components like the off-canvas sidebar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <script type="module">
+        import {
+            API_BASED_URL
+        } from '../api_based_url.js';
+
+        console.log(API_BASED_URL);
         document.addEventListener('DOMContentLoaded', function() {
-    const contentPlaceholder = document.getElementById('content-placeholder');
-    const sidebar = document.getElementById('customSidebar');
-    const toggleSidebarButton = document.getElementById('toggleSidebar');
-    const closeSidebarButton = document.getElementById('closeSidebar');
-    const mainContent = document.querySelector('.main-content');
+            const contentPlaceholder = document.getElementById('content-placeholder');
+            const sidebar = document.getElementById('customSidebar');
+            const toggleSidebarButton = document.getElementById('toggleSidebar');
+            const closeSidebarButton = document.getElementById('closeSidebar');
+            const mainContent = document.querySelector('.main-content');
 
-    // Function to toggle the sidebar
-    toggleSidebarButton.addEventListener('click', function() {
-        if (sidebar.classList.contains('show')) {
-            sidebar.classList.remove('show');
-            sidebar.classList.add('hide');
-            mainContent.classList.remove('shifted');
-        } else {
-            sidebar.classList.remove('hide');
-            sidebar.classList.add('show');
-            mainContent.classList.add('shifted');
-        }
-    });
-
-    // Function to close the sidebar
-    closeSidebarButton.addEventListener('click', function() {
-        sidebar.classList.remove('show');
-        sidebar.classList.add('hide');
-        mainContent.classList.remove('shifted');
-    });
-
-    // Function to load content from a given URL
-    function loadContent(url) {
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+            // Function to toggle the sidebar
+            toggleSidebarButton.addEventListener('click', function() {
+                if (sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                    sidebar.classList.add('hide');
+                    mainContent.classList.remove('shifted');
+                } else {
+                    sidebar.classList.remove('hide');
+                    sidebar.classList.add('show');
+                    mainContent.classList.add('shifted');
                 }
-                return response.text();
-            })
-            .then(data => {
-                contentPlaceholder.innerHTML = data;
-            })
-            .catch(error => {
-                contentPlaceholder.innerHTML = `<p>Error loading content: ${error.message}</p>`;
             });
-    }
 
-    // Event listener for sidebar buttons
-    document.querySelectorAll('.btn-sidebar').forEach(button => {
-        button.addEventListener('click', function() {
-            const url = this.getAttribute('data-url');
-            if (this.id === "logoutButton") {
-                // Call the logout API and handle the response
-                fetch(`${API_BASED_API}/api/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}` // Adjust as needed for your auth setup
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // On successful logout, clear the token and redirect to the login page
-                        localStorage.removeItem('token'); // Clear the stored token
-                        window.location.href = '../index.php'; // Redirect to login page
-                    } else {
-                        alert('Logout failed: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error during logout:', error);
-                    alert('An error occurred while logging out.');
-                });
-            } else if (url) {
-                loadContent(url);
+            // Function to close the sidebar
+            closeSidebarButton.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebar.classList.add('hide');
+                mainContent.classList.remove('shifted');
+            });
+
+            // Function to load content from a given URL
+            function loadContent(url) {
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(data => {
+                        contentPlaceholder.innerHTML = data;
+                    })
+                    .catch(error => {
+                        contentPlaceholder.innerHTML = `<p>Error loading content: ${error.message}</p>`;
+                    });
             }
-        });
-    });
-});
 
+            // Event listener for sidebar buttons
+            document.querySelectorAll('.btn-sidebar').forEach(button => {
+                button.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    if (this.id === "logoutButton") {
+
+                        Swal.fire({
+                            title: 'Logging out...',
+                            html: 'Please wait.',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // Call the logout API and handle the response
+                        fetch(`${API_BASED_URL}/api/logout`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // On successful logout, clear the token and redirect to the login page
+                                    localStorage.removeItem('authToken'); // Clear the stored token
+                                    Swal.fire({
+                                        title: 'Logged out!',
+                                        text: 'You have successfully logged out.',
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        window.location.href = '../index.php'; // Redirect to login page
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Logout failed!',
+                                        text: data.message,
+                                        icon: 'error',
+                                        confirmButtonText: 'Try Again'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error during logout:', error);
+                                alert('An error occurred while logging out.');
+                            });
+                    } else if (url) {
+                        loadContent(url);
+                    }
+                });
+            });
+        });
     </script>
 
 
