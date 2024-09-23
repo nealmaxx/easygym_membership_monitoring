@@ -102,7 +102,7 @@
         </div>
     </div>
 
-    <!-- Fetch and Populate Data -->
+    <!-- Fetch and Populate Data --> 
     <script type="module">
          import {
             API_BASED_URL
@@ -110,9 +110,10 @@
 
         console.log(API_BASED_URL);
         document.addEventListener('DOMContentLoaded', function () {
+
             // Function to fetch and display data
-            function loadClientData() {
-                fetch(API_BASED_URL)
+            function loadClientData(url) {
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         // Populate Personal Information
