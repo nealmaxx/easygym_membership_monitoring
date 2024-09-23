@@ -104,12 +104,12 @@
 
     <!-- Fetch and Populate Data -->
     <script type="module">
-        import {
+         import {
             API_BASED_URL
         } from '../api_based_url.js';
-        document.addEventListener('DOMContentLoaded', function () {
 
-            console.log(API_BASED_URL);
+        console.log(API_BASED_URL);
+        document.addEventListener('DOMContentLoaded', function () {
             // Function to fetch and display data
             function loadClientData() {
                 fetch(API_BASED_URL)
